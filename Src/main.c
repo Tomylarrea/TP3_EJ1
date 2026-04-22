@@ -20,6 +20,7 @@
 #include "main.h"
 #include <simulador.h>
 #include <controlador.h>
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -109,6 +110,7 @@ int main(void)
 	HAL_TIM_Base_Start_IT(&htim1);
 	Estado_simulador estado_actual = iniciar_porton();
 	estado_controlador estado_actual_controlador = CONT_iniciar();
+	uint8_t BC = 0;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -118,8 +120,14 @@ int main(void)
 	/* USER CODE END WHILE */
 	/* USER CODE BEGIN 3 */
 	 if (flag == 1){
-		 M1 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
-		 M2 = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
+		 BC = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
+		 if (BC == 1){
+			 estado_actual_controlador = CONT_evento(estado_actual_controlador, EVENTO_CONT_BC);
+		 }
+		 else{
+			 estado_actual_controlador = CONT_evento(estado_actual_controlador, EVENTO_CONT_TICK);
+		 }
+		 estado_actual_controlador = CONT_evento(estado_actual_controlador, EVENTO_CONT_TICK);
 		 estado_actual = simulador_porton(estado_actual, EVENT_TICK);
 		 flag= 0;
 	 }
