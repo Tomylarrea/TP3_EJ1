@@ -118,6 +118,12 @@ estado_controlador SIM_evento(estado_controlador current, evento_controlador eve
             case ESTADO_SIM_REPOSO_INT:
                 detener_porton();
                 break;
+            case ESTADO_SIM_ABIERTO:
+                detener_porton();
+                break;
+            case ESTADO_SIM_CERRADO:
+                detener_porton();
+                break;
             default: break;
         }
     }
