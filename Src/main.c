@@ -120,6 +120,7 @@ int main(void)
 	/* USER CODE END WHILE */
 	/* USER CODE BEGIN 3 */
 	 if (flag == 1){
+		 BI = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5);
 		 BC = !HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_3);
 
 		 if (BC == 1){
