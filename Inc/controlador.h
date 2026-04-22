@@ -16,21 +16,20 @@ extern uint8_t BI;
 
 /* States */
 typedef enum {
-    ESTADO_SIM_CERRADO,
-    ESTADO_SIM_ABIERTO,
-    ESTADO_SIM_ABRIENDO,
-    ESTADO_SIM_CERRANDO,
-    ESTADO_SIM_REPOSO_INT
+    ESTADO_CONT_CERRADO,
+    ESTADO_CONT_ABIERTO,
+    ESTADO_CONT_ABRIENDO,
+    ESTADO_CONT_CERRANDO,
+    ESTADO_CONT_REPOSO_INT
 } estado_controlador;
 
 /* Events */
 typedef enum {
-    EVENTO_SIM_BOTON_M1,
-    EVENTO_SIM_BOTON_M2,
-    EVENTO_SIM_TICK
+	EVENTO_CONT_BC,
+    EVENTO_CONT_TICK
 } evento_controlador;
 
-estado_controlador SIM_evento(estado_controlador current, evento_controlador event);
-estado_controlador SIM_iniciar(void);
+estado_controlador CONT_evento(estado_controlador current, evento_controlador event);
+estado_controlador CONT_iniciar(void);
 
 #endif /* INC_CONTROLADOR_H_ */

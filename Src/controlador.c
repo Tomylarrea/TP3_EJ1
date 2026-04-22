@@ -37,91 +37,91 @@ void detener_porton(void)
 }
 
 /* Process event and execute actions */
-estado_controlador SIM_evento(estado_controlador current, evento_controlador event) {
+estado_controlador CONT_evento(estado_controlador current, evento_controlador event) {
     estado_controlador next = current;
     switch (current) {
-        case ESTADO_SIM_CERRADO:
-            if (event == EVENTO_SIM_BOTON_M1 && (BI == 0)) {
-                next = ESTADO_SIM_ABRIENDO;
+            case ESTADO_CONT_CERRADO:
+                if (event == EVENTO_CONT_BC && (BI == 0)) {
+                    next = ESTADO_CONT_ABRIENDO;
+                    break;
+                }
+                if (event == EVENTO_CONT_BC && (BI == 1)) {
+                    next = ESTADO_CONT_CERRADO;
+                    break;
+                }
                 break;
-            }
-            if (event == EVENTO_SIM_BOTON_M1 && (BI == 1)) {
-                next = ESTADO_SIM_CERRADO;
+            case ESTADO_CONT_ABIERTO:
+                if (event == EVENTO_CONT_BC && (BI == 0)) {
+                    next = ESTADO_CONT_CERRANDO;
+                    break;
+                }
+                if (event == EVENTO_CONT_BC && (BI == 1)) {
+                    next = ESTADO_CONT_ABIERTO;
+                    break;
+                }
                 break;
-            }
-            break;
-        case ESTADO_SIM_ABIERTO:
-            if (event == EVENTO_SIM_BOTON_M2 && (BI == 0)) {
-                next = ESTADO_SIM_CERRANDO;
+            case ESTADO_CONT_ABRIENDO:
+                if (event == EVENTO_CONT_TICK && (BI == 1)) {
+                    next = ESTADO_CONT_REPOSO_INT;
+                    break;
+                }
+                if (event == EVENTO_CONT_TICK && (BI == 0 && FC1 == 0)) {
+                    next = ESTADO_CONT_ABRIENDO;
+                    break;
+                }
+                if (event == EVENTO_CONT_TICK && (FC1 == 1)) {
+                    next = ESTADO_CONT_ABIERTO;
+                    break;
+                }
                 break;
-            }
-            if (event == EVENTO_SIM_BOTON_M2 && (BI == 1)) {
-                next = ESTADO_SIM_ABIERTO;
+            case ESTADO_CONT_CERRANDO:
+                if (event == EVENTO_CONT_TICK && (BI == 1)) {
+                    next = ESTADO_CONT_REPOSO_INT;
+                    break;
+                }
+                if (event == EVENTO_CONT_TICK && (BI == 0 && FC2 == 0)) {
+                    next = ESTADO_CONT_CERRANDO;
+                    break;
+                }
+                if (event == EVENTO_CONT_TICK && (FC2 == 1)) {
+                    next = ESTADO_CONT_CERRADO;
+                    break;
+                }
                 break;
-            }
-            break;
-        case ESTADO_SIM_ABRIENDO:
-            if (event == EVENTO_SIM_TICK && (BI == 1)) {
-                next = ESTADO_SIM_REPOSO_INT;
+            case ESTADO_CONT_REPOSO_INT:
+                if (event == EVENTO_CONT_TICK && (BI==1)) {
+                    next = ESTADO_CONT_REPOSO_INT;
+                    break;
+                }
+                if (event == EVENTO_CONT_BC && (BI == 0 && sentido == 1)) {
+                    next = ESTADO_CONT_CERRANDO;
+                    break;
+                }
+                if (event == EVENTO_CONT_BC && (BI == 0 && sentido == 0)) {
+                    next = ESTADO_CONT_ABRIENDO;
+                    break;
+                }
                 break;
-            }
-            if (event == EVENTO_SIM_TICK && (BI == 0 && FC1 == 0)) {
-                next = ESTADO_SIM_ABRIENDO;
-                break;
-            }
-            if (event == EVENTO_SIM_TICK && (FC1 == 1)) {
-                next = ESTADO_SIM_ABIERTO;
-                break;
-            }
-            break;
-        case ESTADO_SIM_CERRANDO:
-            if (event == EVENTO_SIM_TICK && (BI == 1)) {
-                next = ESTADO_SIM_REPOSO_INT;
-                break;
-            }
-            if (event == EVENTO_SIM_TICK && (BI == 0 && FC2 == 0)) {
-                next = ESTADO_SIM_CERRANDO;
-                break;
-            }
-            if (event == EVENTO_SIM_TICK && (FC2 == 1)) {
-                next = ESTADO_SIM_CERRADO;
-                break;
-            }
-            break;
-        case ESTADO_SIM_REPOSO_INT:
-            if (event == EVENTO_SIM_TICK && (BI==1)) {
-                next = ESTADO_SIM_REPOSO_INT;
-                break;
-            }
-            if (event == EVENTO_SIM_TICK && (BI == 0 && sentido == 1)) {
-                next = ESTADO_SIM_CERRANDO;
-                break;
-            }
-            if (event == EVENTO_SIM_TICK && (BI == 0 && sentido == 0)) {
-                next = ESTADO_SIM_ABRIENDO;
-                break;
-            }
-            break;
-        default: break;
-    }
+            default: break;
+        }
 
     if (next != current) {
         switch (next) {
-            case ESTADO_SIM_ABRIENDO:
+            case ESTADO_CONT_ABRIENDO:
                 sentido = 0;
                 abrir_porton();
                 break;
-            case ESTADO_SIM_CERRANDO:
+            case ESTADO_CONT_CERRANDO:
                 sentido = 1;
                 cerrar_porton();
                 break;
-            case ESTADO_SIM_REPOSO_INT:
+            case ESTADO_CONT_REPOSO_INT:
                 detener_porton();
                 break;
-            case ESTADO_SIM_ABIERTO:
+            case ESTADO_CONT_ABIERTO:
                 detener_porton();
                 break;
-            case ESTADO_SIM_CERRADO:
+            case ESTADO_CONT_CERRADO:
                 detener_porton();
                 break;
             default: break;
@@ -131,7 +131,7 @@ estado_controlador SIM_evento(estado_controlador current, evento_controlador eve
 }
 
 /* Initialize FSM */
-estado_controlador SIM_iniciar(void) {
-	estado_controlador initial = ESTADO_SIM_CERRADO;
+estado_controlador CONT_iniciar(void) {
+	estado_controlador initial = ESTADO_CONT_CERRADO;
     return initial;
 }

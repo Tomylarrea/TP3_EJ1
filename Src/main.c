@@ -108,6 +108,7 @@ int main(void)
 	/* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim1);
 	Estado_simulador estado_actual = iniciar_porton();
+	estado_controlador estado_actual_controlador = CONT_iniciar();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
