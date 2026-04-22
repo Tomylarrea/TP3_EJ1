@@ -1,37 +1,35 @@
-### Ejercicio 1
+# Controlador de Portón Automático con Simulador
 
-Crear el firmware de un controlador para un portón automático (como los de cocheras), junto con un simulador de portón para poder probarlo. Es decir, se asemeja a realizar dos proyectos distintos dentro del mismo microcontrolador, implementando dos módulos, cada uno controlado por una máquina de estados.
+## Descripción del sistema
 
-**El sistema se compone de:**
+Este proyecto implementa el firmware de un controlador para un portón automático de cochera, junto con un simulador del portón que permite probarlo dentro del mismo microcontrolador (STM32F103C8T6). El sistema está compuesto por dos módulos independientes, cada uno modelado como una máquina de estados finitos (FSM), que se comunican entre sí a través de variables compartidas.
 
-- Un módulo controlador, que posee cuatro entradas y dos salidas:
-  - Un botón único para comandarlo (BC).
-  - Un sensor de fin de carrera para la apertura (FC1).
-  - Un sensor de fin de carrera para el cierre (FC2).
-  - Un haz infrarrojo que detiene el movimiento si es interrumpido (BI).
-  - Dos salidas para accionar el motor en uno u otro sentido (M1, M2). El motor se activa por nivel (no por pulso), es decir, se mueve mientras la línea correspondiente esté activa.
+El **módulo simulador** representa el comportamiento físico del portón. Recibe como entradas las señales de motor M1 y M2, y expone como salidas los finales de carrera FC1 (apertura) y FC2 (cierre). El portón tarda 400 ticks en recorrer el trayecto completo entre un extremo y el otro, lo que equivale a 4 segundos con una cadencia de ejecución de 10 ms. Los estados que modela son: `ABRIENDO`, `CERRANDO`, `ABIERTO`, `CERRADO` y `REPOSO_INT`.
 
-- Un módulo simulador de portón, que posee dos entradas y dos salidas:
-  - Dos entradas para emular el accionamiento del motor (M1, M2).
-  - Dos salidas que emulan los finales de carrera (FC1, FC2).
+El **módulo controlador** implementa la lógica de comando del portón. Recibe como entradas un botón único (BC), los sensores de fin de carrera FC1 y FC2 provistos por el simulador, y un haz infrarrojo de seguridad (BI). Sus salidas son las señales M1 y M2 que alimentan al simulador. Los estados que modela son: `ABRIENDO`, `CERRANDO`, `ABIERTO`, `CERRADO` y `REPOSO_INT`.
 
-**El funcionamiento de los módulos respeta los siguientes puntos:**
+El comportamiento del controlador respeta las siguientes reglas: al presionar BC desde el estado cerrado, el portón comienza a abrir; desde el estado abierto, comienza a cerrar. Si el haz infrarrojo se interrumpe durante el movimiento, el portón se detiene en un estado de reposo intermedio, y solo retoma el movimiento en el mismo sentido al liberar el haz y volver a presionar el botón. La posición inicial se determina al encender el sistema leyendo el estado de los finales de carrera.
 
-- **Para el controlador:**
-  - Al encender, se leen los sensores de fin de carrera para determinar la posición inicial del portón.
-  - Si ninguno está activado, al presionar el botón el portón se cerrará.
-  - Si alguno está activado, al presionar el botón el portón se moverá hacia el otro extremo.
-  - El movimiento se detiene si se interrumpe el haz infrarrojo, tanto en apertura como en cierre. Para reanudar, el haz debe liberarse y se debe volver a presionar el botón, continuando en el mismo sentido.
+Ambas FSMs se ejecutan cada 10 ms, sincronizadas por un timer de hardware.
 
-- **Para el emulador de portón:**
-  - El portón tarda 4 segundos en ir de un fin de carrera al otro.
-  - Ambas máquinas de estados se ejecutan cada 10 ms.
+---
 
-**Consignas:**
+## Arquitectura de firmware
 
-1. Implementar el módulo de portón como una máquina de estados utilizando pulsadores en M1 y M2, y LEDs para FC1 y FC2. Considerar, si se desea, los estados: ABIERTO, CERRADO, ABRIENDO, CERRANDO, REPOSO_INTERMEDIO.
-2. Implementarlo como librería.
-3. Implementar el módulo controlador como una máquina de estados, conectado al módulo de portón.
-4. Implementarlo como librería.
-5. Describir el tipo de arquitectura de firmware utilizada (superloop, foreground/background, time-triggered), fundamentando la elección.
-6. Implementar la temporización o alguna de las entradas mediante interrupciones (si no se hizo previamente), evitando problemas de concurrencia con las máquinas de estado y explicando el funcionamiento.
+La arquitectura utilizada es **Foreground/Background**.
+
+En este esquema, el programa se divide en dos niveles de ejecución. El **background** es el bucle principal (`while(1)` en `main`), que contiene toda la lógica de la aplicación. El **foreground** está compuesto por las rutinas de servicio de interrupción (ISR), que responden a eventos del hardware de forma asincrónica.
+
+En este proyecto, el timer TIM1 se configura para generar una interrupción cada 10 ms. La ISR correspondiente (`HAL_TIM_PeriodElapsedCallback`) únicamente levanta un flag de tipo `volatile uint8_t`. El loop principal verifica ese flag en cada iteración y, cuando está activo, ejecuta la siguiente secuencia: lectura de entradas físicas (BC y BI), procesamiento del controlador, procesamiento del simulador, y bajada del flag.
+
+### Justificación de la elección
+
+Esta arquitectura fue elegida por tres razones principales.
+
+En primer lugar, garantiza una **cadencia temporal predecible**. Ambas FSMs deben ejecutarse cada 10 ms según el enunciado, y el timer de hardware asegura ese período de forma precisa e independiente del tiempo de ejecución del loop.
+
+En segundo lugar, **evita problemas de concurrencia**. La ISR no accede a las variables de estado ni invoca las FSMs directamente; su única responsabilidad es señalizar mediante el flag. Toda la lógica de las FSMs se ejecuta íntegramente en el contexto del background, lo que elimina la posibilidad de condiciones de carrera. El uso de `volatile` en la declaración del flag garantiza que el compilador no optimice su lectura, asegurando la correcta comunicación entre los dos contextos de ejecución.
+
+En tercer lugar, la **complejidad del sistema no justifica una arquitectura más elaborada**. Un esquema time-triggered aportaría estructura adicional para gestionar múltiples tareas con distintos períodos, pero en este caso ambas FSMs comparten la misma cadencia de 10 ms, por lo que un scheduler simple no agrega valor y sí agrega complejidad innecesaria. Un superloop sin interrupciones, por su parte, no garantizaría el período de ejecución ante cualquier variación en el tiempo de procesamiento.
+
+El esquema foreground/background representa, en este contexto, la solución más simple que cumple correctamente con todos los requisitos del sistema.
